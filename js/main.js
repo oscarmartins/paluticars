@@ -1,6 +1,9 @@
 const USED_CARS = 'filter-used'; 
 const NEW_CARS = 'filter-new';
-const url_path = 'https://orcseven.com/api/orcv2/viewController'; //'//localhost:8081/orcv2/viewController';
+/**
+ *  '//localhost:8081/orcv2/viewController';
+ */
+const url_path = 'https://orcseven.com/api/orcv2/viewController';
 let orcsettings = null;
 $.ajaxSetup({
   beforeSend: function (xhr) {
@@ -9,14 +12,17 @@ $.ajaxSetup({
     }
   }
 });
+async function preloader () {
+  return await $.get(url_path, function (rsp){
+    orcsettings = rsp;
+    readAll();
+    return true;                        
+  }).fail(function(e){
+    alert('não foi possivel resolver o pedido, por favor tente mais tarde. Obrigado.');
+    return false;
+  });
+}
 
-$.get(url_path, function (rsp){
-  orcsettings = rsp;
-  return true;                        
-}).fail(function(e){
-  alert('não foi possivel resolver o pedido, por favor tente mais tarde. Obrigado.');
-  return false;
-});
 
 function fillPortfolio (responseData) {
   let status = null;
@@ -65,6 +71,8 @@ function BackToTopButton($j) {
 }
 
 jQuery(document).ready(function ($) {
+
+    preloader();
 
   // Back to top button
     BackToTopButton($); 
@@ -193,8 +201,6 @@ jQuery(document).ready(function ($) {
     time: 1000
   });
   
-  readAll();
-
   // Clients carousel (uses the Owl Carousel library)
   $(".clients-carousel").owlCarousel({
     autoplay: true,
