@@ -1,6 +1,6 @@
 const USED_CARS = 'filter-used'; 
 const NEW_CARS = 'filter-new';
-const url_path = '//orcseven.com/api/orcv2/viewController'; //'//localhost:8081/orcv2/viewController';
+const url_path = 'https//orcseven.com/api/orcv2/viewController'; //'//localhost:8081/orcv2/viewController';
 let orcsettings = null;
 $.ajaxSetup({
   beforeSend: function (xhr) {
