@@ -224,8 +224,8 @@ function serviceParams () {
 } 
 
 async function service (type, data, callb) {
-  /**orcsettings.server.serverUrlApi */
-  return $.ajax(orcsettings.server.local_server_path,{
+  /**server.local_server_path */
+  return $.ajax(orcsettings.orcsettings.server.serverUrlApi,{
       type: type,
       dataType: 'json',
       contentType: "application/json; charset=utf-8",
