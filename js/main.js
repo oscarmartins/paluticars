@@ -1,3 +1,54 @@
+const USED_CARS = 'filter-used'; 
+const NEW_CARS = 'filter-new';
+const url_path = '//localhost:8081/orcv2/viewController';
+let orcsettings = null;
+$.ajaxSetup({
+  beforeSend: function (xhr) {
+    if (orcsettings) {                
+      xhr.setRequestHeader('severContext', orcsettings.server.context)    
+    }
+  }
+});
+
+$.get(url_path, function (rsp){
+  orcsettings = rsp;
+  return true;                        
+}).fail(function(e){
+  alert('não foi possivel resolver o pedido, por favor tente mais tarde. Obrigado.');
+  return false;
+});
+
+function fillPortfolio (responseData) {
+  let status = null;
+  const portfolioContainer = $('.portfolio-container');
+
+  responseData.data.forEach((pub)=>{
+    debugger;
+    if (pub.published) {
+        status = (pub.pubCondStatus === 'condUsed' ? USED_CARS : NEW_CARS);
+        $('<div>', {class:'col-lg-4 col-md-6 portfolio-item wow fadeInUp ' + status}).append(
+        $('<div>', {class:'portfolio-wrap'}).append(
+        $('<figure>', {class:'portfolio-figure'}).append(
+        $('<img>', {class:'img-fluid', alt: '', src: pub.pubGalery[0].base64}),
+        $('<a>', {class:'link-preview', 'data-lightbox': 'portfolio', 'data-title':pub.pubName, title:pub.pubName, href:'#'}).append(
+        $('<i>', {class:'ion ion-eye'})
+        ),
+        $('<a>', {class:'link-details', title:'More Details', href:'#'}).append(
+        $('<i>', {class:'ion ion-android-open'})
+        )
+        ),
+        $('<div>', {class: 'portfolio-info'}).append(
+        $('<h4>').append(
+        $('<a>', {href:'#'}).text(pub.pubName)
+        ),
+        $('<p>').text('Ano: ' + pub.pubAnoRegisto)
+        )
+        )
+        ).appendTo(portfolioContainer);
+    }
+  });
+} 
+
 function BackToTopButton($j) {
   // Back to top button
   $j(window).scroll(function () {
@@ -141,19 +192,8 @@ jQuery(document).ready(function ($) {
     delay: 10,
     time: 1000
   });
-
-  // Porfolio isotope and filter
-  var portfolioIsotope = $('.portfolio-container').isotope({
-    itemSelector: '.portfolio-item',
-    layoutMode: 'fitRows'
-  });
-
-  $('#portfolio-flters li').on('click', function () {
-    $("#portfolio-flters li").removeClass('filter-active');
-    $(this).addClass('filter-active');
-
-    portfolioIsotope.isotope({ filter: $(this).data('filter') });
-  });
+  
+  readAll();
 
   // Clients carousel (uses the Owl Carousel library)
   $(".clients-carousel").owlCarousel({
@@ -174,3 +214,70 @@ jQuery(document).ready(function ($) {
   });
 
 });
+
+function serviceParams () {
+  return {
+      REQ_CONTEX : 155015, 
+      REQ_ACTION : 1,
+      REQ_INPUTS: {origin:'w2ui'}
+  };
+} 
+
+async function service (type, data, callb) {
+  /**orcsettings.server.serverUrlApi */
+  return $.ajax(orcsettings.server.local_server_path,{
+      type: type,
+      dataType: 'json',
+      contentType: "application/json; charset=utf-8",
+      data : JSON.stringify(data), 
+      success: callb,
+      error: function(XMLHttpRequest, textStatus, errorThrown) {
+          alert(String(XMLHttpRequest.responseText));
+      }
+  });
+}
+
+async function post (data, callb) {
+  return await service('POST', data, callb)
+}
+
+function readAll () {
+  let data = serviceParams();
+  data.REQ_ACTION = 100600;
+  data.REQ_INPUTS['SUBACTION'] = 'readAll';
+  data.REQ_INPUTS['SUBVALUE'] = true;
+  post(data, (data) => {
+      try {
+          if (data.status === 'success') {
+              if (data.dataresponse && data.dataresponse.status === 200) {
+                  if (data.dataresponse.output && data.dataresponse.output.iook) {
+                    fillPortfolio(data.dataresponse.output); 
+                    // Porfolio isotope and filter
+                    var portfolioIsotope = $('.portfolio-container').isotope({
+                      itemSelector: '.portfolio-item',
+                      layoutMode: 'fitRows'
+                    });
+
+                    $('#portfolio-flters li').on('click', function () {
+                      $("#portfolio-flters li").removeClass('filter-active');
+                      $(this).addClass('filter-active');
+                      portfolioIsotope.isotope({ filter: $(this).data('filter') });
+                    });
+                  }
+              } else {
+                  let msg = data.dataresponse.message; 
+                  if (!msg && data.dataresponse.output) {
+                      msg = data.dataresponse.output.error;
+                  } else {
+                      msg = 'error desconhecido'
+                  }
+                  throw(msg);
+              }
+          } else {
+              throw(data.message);
+          }
+      } catch (error) {
+          alert(error)
+      }
+  });
+  }
